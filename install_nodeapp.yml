@@ -1,0 +1,58 @@
+---
+- name: Install Hello Node app
+  gather_facts: No
+  hosts: default
+  become: yes
+  become_method: sudo
+
+  vars:
+    ppath: "/home/provisioner"
+
+  tasks:
+    - name: Install python-pip
+      yum:
+        name: python-pip
+        state: latest
+
+    - name: Install docker-py
+      pip:
+        name: docker-py
+
+    - name: Copy files
+      copy:
+        src: "{{ item }}"
+        dest: "{{ ppath }}/{{ item }}"
+        owner: provisioner
+        mode: 0644
+      with_items:
+        - Dockerfile
+        - server.js
+        - package.json
+        - .dockerignore
+  
+    - name: Colorize PS1
+      shell: |
+        echo "PS1=\"\e[1;34m[\u@\h \W]\$ \e[m\"" >> {{ ppath }}/.bashrc
+        source {{ ppath }}/.bashrc
+
+      #shell: docker pull node:latest
+    - name: Pull Node lastest image
+      docker_image:
+        name: node
+
+      #shell: docker build -t hello-nodeapp .
+    - name: Build image
+      docker_image:
+        name: hello-nodeapp
+        path: "{{ ppath }}"
+    
+      #shell: docker run -p 8084:8084 -d --name hello-app1 hello-nodeapp
+    - name: Run Container
+      docker_container:
+        name: hello-app1
+        image: hello-nodeapp
+        ports: ["8084:8084"]
+ 
+
+
+
